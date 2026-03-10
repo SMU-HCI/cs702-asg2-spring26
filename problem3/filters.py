@@ -173,54 +173,6 @@ class KalmanFilter(Filter):
         ])
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Extended Kalman Filter (EKF)
-# ═══════════════════════════════════════════════════════════════════════════
-
-@dataclass
-class ExtendedKalmanFilter(Filter):
-    """Extended Kalman Filter for nonlinear dynamics or observations.
-
-    The EKF replaces the linear F and H matrices with their Jacobians J_f
-    and J_h evaluated at the current state estimate::
-
-        Predict:  x̂⁻ = f(x̂),         P⁻ = J_f · P · J_fᵀ + Q
-        Update:   z   = y − h(x̂⁻),   S  = J_h · P⁻ · J_hᵀ + R
-                  K   = P⁻ · J_hᵀ · S⁻¹
-                  x̂   = x̂⁻ + K · z,  P  = (I − K · J_h) · P⁻
-
-    TODO: Choose a nonlinear extension.  Options include:
-      - Polar-coordinate observations (angle + distance to a target point).
-      - Joint-angle kinematics from multiple MediaPipe landmarks.
-    Then implement f(), h(), J_f(), J_h(), predict(), and update().
-    """
-
-    q: float = 10.0
-    r: float = 1e-4
-
-    _x: np.ndarray = field(default_factory=lambda: np.zeros(6), repr=False)
-    _P: np.ndarray = field(default_factory=lambda: np.eye(6),   repr=False)
-    _initialized: bool = field(default=False, repr=False)
-
-    def predict(self, dt: float) -> None:
-        raise NotImplementedError("ExtendedKalmanFilter.predict() — TODO")
-
-    def update(self, y: np.ndarray) -> None:
-        if not self._initialized:
-            self._x = np.zeros(6)
-            self._x[[0, 2, 4]] = y
-            self._P = np.eye(6)
-            self._initialized = True
-            return
-        raise NotImplementedError("ExtendedKalmanFilter.update() — TODO")
-
-    def get_state(self) -> np.ndarray:
-        return self._x[[0, 2, 4]].copy()
-
-    def predict_ahead(self, tau_ms: float) -> np.ndarray:
-        if not self._initialized:
-            return np.zeros(3)
-        raise NotImplementedError("ExtendedKalmanFilter.predict_ahead() — TODO")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

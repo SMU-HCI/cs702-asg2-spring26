@@ -24,7 +24,6 @@ import numpy as np
 from filters import (
     Filter,
     KalmanFilter,
-    ExtendedKalmanFilter,
     ParticleFilter,
     MovingHorizonEstimator,
 )
@@ -38,7 +37,6 @@ from part1 import (
 
 FILTER_REGISTRY: dict[str, type[Filter]] = {
     "kf":  KalmanFilter,
-    "ekf": ExtendedKalmanFilter,
     "pf":  ParticleFilter,
     "mhe": MovingHorizonEstimator,
 }
@@ -124,7 +122,7 @@ def run_live(filter_name: str) -> None:
     """Run live MediaPipe tracking with a selected Bayesian filter overlaid.
 
     Args:
-        filter_name: Key from FILTER_REGISTRY (``kf``, ``ekf``, ``pf``, ``mhe``).
+        filter_name: Key from FILTER_REGISTRY (``kf``, ``pf``, ``mhe``).
     """
     if filter_name not in FILTER_REGISTRY:
         raise ValueError(

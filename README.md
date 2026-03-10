@@ -197,7 +197,6 @@ pixi run python part1.py --load data.npz
 ```bash
 pixi run python part2.py --load data.npz   # offline RMSE comparison table
 pixi run python part2.py --live --filter kf    # live KF overlay
-pixi run python part2.py --live --filter ekf   # live EKF overlay
 pixi run python part2.py --live --filter pf    # live particle filter overlay
 pixi run python part2.py --live --filter mhe   # live MHE overlay
 ```
@@ -208,7 +207,6 @@ pixi run python part2.py --live --filter mhe   # live MHE overlay
 |------|------|------------|
 | 3.1 — Naïve prediction | [part1.py](problem3/part1.py) | `NaivePredictor.update`, `NaivePredictor.predict_ahead` |
 | 3.2 — Kalman Filter | [filters.py](problem3/filters.py) | `KalmanFilter.predict`, `KalmanFilter.update` |
-| 3.2 — EKF | [filters.py](problem3/filters.py) | `ExtendedKalmanFilter.predict`, `.update`, `.predict_ahead` |
 | 3.2 — Particle Filter | [filters.py](problem3/filters.py) | `ParticleFilter.predict`, `.update`, `.predict_ahead` |
 | 3.2 — MHE | [filters.py](problem3/filters.py) | `MovingHorizonEstimator.update` |
 
