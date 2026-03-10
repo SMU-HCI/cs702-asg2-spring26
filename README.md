@@ -9,13 +9,13 @@ If you don't have pixi installed:
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-Install the base environment (pygame + stljax are already declared in `pixi.toml`):
+Install all dependencies (declared in `pixi.toml`):
 
 ```bash
 pixi install
 ```
 
-JAX, Optax, and other dependencies for **Problem 2** are already declared in `pixi.toml`.
+Dependencies include pygame and stljax for Problem 1 & 2, and mediapipe and opencv-python for Problem 3.
 
 ---
 
@@ -162,22 +162,58 @@ grep -n "# TODO" problem2/part1.py problem2/part2.py
 
 ---
 
-## Project structure
+## Problem 3 — Kinematics-based Hand Tracking
 
+All commands below should be run from the **`problem3/`** directory.
+
+```bash
+cd problem3
 ```
-cs702-asg2/
-├── pixi.toml              ← environment spec
-├── problem1/
-│   └── game.py            ← Flappy Bird game + controller stubs
-└── problem2/
-    ├── config.py           ← constants, weights, Hotspot dataclass
-    ├── utils.py            ← geometry, resampling, random seed
-    ├── data.py             ← synthetic dataset generation + loaders
-    ├── metrics.py          ← occlusion, deviation, smoothness, dispersion
-    ├── viewer.py           ← pygame player + frame export
-    ├── part1.py            ← bundling + layout + baseline  (★ implement here)
-    ├── part2.py            ← STL specs + losses + optimise (★ implement here)
-    ├── run_demo.py         ← quick end-to-end demo
-    ├── data/               ← synthetic/ and real/ trajectory data
-    └── reports/figures/    ← saved plots
+
+### 1. Live capture + naïve kinematic prediction
+
+```bash
+pixi run python part1.py
+```
+
+Opens a webcam window showing the MediaPipe hand skeleton and prediction
+circles at 100 ms, 200 ms, and 300 ms ahead of the index fingertip.
+Press `q` or `Esc` to quit.
+
+To record a session to file:
+
+```bash
+pixi run python part1.py --save data.npz
+```
+
+To replay saved data and evaluate RMSE:
+
+```bash
+pixi run python part1.py --load data.npz
+```
+
+### 2. Bayesian filtering
+
+```bash
+pixi run python part2.py --load data.npz   # offline RMSE comparison table
+pixi run python part2.py --live --filter kf    # live KF overlay
+pixi run python part2.py --live --filter ekf   # live EKF overlay
+pixi run python part2.py --live --filter pf    # live particle filter overlay
+pixi run python part2.py --live --filter mhe   # live MHE overlay
+```
+
+### What to implement
+
+| Part | File | What to do |
+|------|------|------------|
+| 3.1 — Naïve prediction | [part1.py](problem3/part1.py) | `NaivePredictor.update`, `NaivePredictor.predict_ahead` |
+| 3.2 — Kalman Filter | [filters.py](problem3/filters.py) | `KalmanFilter.predict`, `KalmanFilter.update` |
+| 3.2 — EKF | [filters.py](problem3/filters.py) | `ExtendedKalmanFilter.predict`, `.update`, `.predict_ahead` |
+| 3.2 — Particle Filter | [filters.py](problem3/filters.py) | `ParticleFilter.predict`, `.update`, `.predict_ahead` |
+| 3.2 — MHE | [filters.py](problem3/filters.py) | `MovingHorizonEstimator.update` |
+
+Search for `# TODO` to find every stub:
+
+```bash
+grep -n "# TODO\|NotImplementedError" problem3/part1.py problem3/filters.py
 ```

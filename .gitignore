@@ -14,6 +14,10 @@ frames/
 # Generated data
 problem2/data/synthetic/*.npy
 problem2/data/real/*.npy
+problem3/data.npz
+
+# Downloaded model weights
+*.task
 
 # Reports (generated plots)
 problem2/reports/figures/*.png
