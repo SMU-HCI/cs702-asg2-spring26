@@ -91,21 +91,30 @@ for h in hotspots:
 "
 ```
 
-### 2. Run the Part 1 pipeline
+You can generate datasets with varying numbers of trajectories:
+
+```bash
+pixi run python -c "
+from data import generate_dataset
+for n in [5, 10, 20, 50]:
+    t, h = generate_dataset(n=n)
+    print(f'N={n:3d}  shape={t.shape}')
+"
+```
+
+### 2. Run the Part 1 pipeline (STL specification evaluation)
 
 ```bash
 pixi run python part1.py
 ```
 
-This generates synthetic data, runs bundling + layout (stubs initially, so
-output = input), prints metrics, and opens the pygame viewer.
+This evaluates all STL specifications (stubs initially, returning 0) against
+baseline trajectories for N in {5, 10, 20, 50} and prints a robustness table.
 
 Options:
 
 ```bash
-pixi run python part1.py --data path/to/trajs.npy   # custom data
-pixi run python part1.py --clusters 4 --strength 0.5
-pixi run python part1.py --record frames/part1/      # export PNGs
+pixi run python part1.py --ns 10 20 30    # custom N values
 ```
 
 ### 3. Run the Part 2 optimisation pipeline
@@ -114,9 +123,9 @@ pixi run python part1.py --record frames/part1/      # export PNGs
 pixi run python part2.py
 ```
 
-This warm-starts from the Part 1 output, runs the JAX/Optax optimisation loop,
-prints a comparison table (Baseline / Part 1 / Part 2), saves a convergence
-plot to `reports/figures/convergence.png`, and opens the viewer.
+This runs the JAX/Optax optimisation loop, prints a comparison table
+(Baseline vs. Optimised), saves a convergence plot to
+`reports/figures/convergence.png`, and opens the viewer.
 
 Options:
 
@@ -138,7 +147,7 @@ pixi run python part2.py --ablate no_separation
 pixi run python run_demo.py
 ```
 
-Generates data, runs Part 1 + Part 2 (200 steps), and plays back the result.
+Generates data, runs Part 2 optimisation (200 steps), and plays back the result.
 
 ### 5. Export frames to video
 
@@ -151,8 +160,8 @@ ffmpeg -r 30 -i frames/part2/frame_%04d.png -pix_fmt yuv420p output.mp4
 
 | Part | File | What to do |
 |------|------|------------|
-| 1 — Bundling & Layout | [part1.py](problem2/part1.py) | `pairwise_similarity`, `cluster_trajectories`, `bundle_trajectories`, `assign_offsets` |
-| 2 — STL specs & Losses | [part2.py](problem2/part2.py) | `robustness_start_end`, `robustness_convergence`, `robustness_divergence`, `separation_loss` |
+| 2.1 — STL Specifications | [part1.py](problem2/part1.py) | `bundling_robustness`, `separation_robustness`, `smoothness_robustness`, `start_end_robustness` |
+| 2.2 — STL + Optimisation | [part2.py](problem2/part2.py) | `separation_loss`, integrate Part 1 specs into optimisation |
 
 Search for `# TODO` to find every stub:
 

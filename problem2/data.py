@@ -48,15 +48,18 @@ def generate_dataset(
     t_diverge  = 2 * k // 3  # frame at which objects leave diverge hotspot
 
     # --- Generate start / end positions ---
+    # Starts and ends are spread across the full vertical range.
     starts = rng.uniform([0, 0], [width * 0.15, height], size=(n, 2)).astype(np.float32)
     ends   = rng.uniform([width * 0.85, 0], [width, height], size=(n, 2)).astype(np.float32)
 
-    # --- Build trajectories: linear segments with added noise ---
+    # --- Build trajectories ---
+    # Each trajectory interpolates: start -> (near converge) -> (near diverge) -> end.
+    # Large per-object offsets around hotspots simulate messy real-world data:
+    # the trajectories pass *near* the hotspots but don't converge tightly.
     trajs = np.zeros((n, k, 2), dtype=np.float32)
 
-    # Add slight per-object offset around the hotspots to avoid perfect overlap.
-    offset_c = rng.normal(0, 8, size=(n, 2)).astype(np.float32)
-    offset_d = rng.normal(0, 8, size=(n, 2)).astype(np.float32)
+    offset_c = rng.normal(0, 60, size=(n, 2)).astype(np.float32)
+    offset_d = rng.normal(0, 60, size=(n, 2)).astype(np.float32)
     converge_pts = converge_pt + offset_c
     diverge_pts  = diverge_pt  + offset_d
 
@@ -72,10 +75,10 @@ def generate_dataset(
                 trajs[i, t0:t1, d] = np.linspace(wps[seg, d], wps[seg + 1, d], steps)
         trajs[i, -1] = ends[i]
 
-    # Add small smooth noise.
+    # Add stronger, jerkier noise to create occlusion and rough motion.
     from scipy.ndimage import gaussian_filter1d
-    noise = rng.normal(0, 3, size=trajs.shape).astype(np.float32)
-    noise = gaussian_filter1d(noise, sigma=3, axis=1)
+    noise = rng.normal(0, 12, size=trajs.shape).astype(np.float32)
+    noise = gaussian_filter1d(noise, sigma=1.5, axis=1)   # less smoothing
     trajs += noise
     trajs = np.clip(trajs, 0, [[width, height]])
 

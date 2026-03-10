@@ -1,29 +1,41 @@
-"""Part 1 — Animation Algorithm: bundling, layout, and baseline.
+"""Part 1 — STL Specifications for Animation Qualities.
 
-Implement a simplified "RouteFlow-like" algorithm that generates an animated
-transition from a set of trajectories.
+Write Signal Temporal Logic (STL) specifications that capture desirable
+animation properties: bundling, separation, smoothness, and start/end
+correctness.  Evaluate each specification against baseline trajectories
+with varying numbers of objects.
 
 Usage::
 
-    cd problem2_v2
-    python part1.py                        # synthetic data
-    python part1.py --data path/to.npy     # custom data
-    python part1.py --record frames/       # export PNG frames
+    cd problem2
+    python part1.py                        # evaluate on N = 5, 10, 20, 50
+    python part1.py --ns 10 20 30          # custom N values
 """
 
 from __future__ import annotations
 import argparse
-import numpy as np
-from numpy.typing import NDArray
+from typing import Any
 
-from config import N, K, WINDOW_WIDTH, WINDOW_HEIGHT, DOT_RADIUS, RANDOM_SEED, Hotspot
+import numpy as np
+import jax.numpy as jnp
+
+from config import K, DOT_RADIUS, RANDOM_SEED, Hotspot
+
+# stljax imports — adjust to match the installed API version.
+try:
+    import stljax
+    from stljax.formula import Predicate, Always, Eventually
+    _STLJAX_OK = True
+except ImportError:
+    _STLJAX_OK = False
+    print("[warning] stljax not found; STL robustness will return 0.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Baseline
 # ═══════════════════════════════════════════════════════════════════════════
 
-def baseline(traj_in: NDArray) -> NDArray:
+def baseline(traj_in: np.ndarray) -> np.ndarray:
     """Convert input trajectories to the rendering format without modification.
 
     Args:
@@ -36,245 +48,237 @@ def baseline(traj_in: NDArray) -> NDArray:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Similarity measure
+# A) Bundling specification
 # ═══════════════════════════════════════════════════════════════════════════
 
-def pairwise_similarity(traj_in: NDArray) -> NDArray:
-    """Compute an (N, N) pairwise similarity matrix between trajectories.
+def bundling_robustness(
+    pos: Any,
+    hotspots: list[Hotspot],
+    threshold: float = 15.0,
+) -> Any:
+    """STL robustness for bundling: group members stay close during convergence.
+
+    Intent: For each convergence hotspot with group G and active time t_c,
+    during a time window around t_c the maximum pairwise distance within
+    G should remain below ``threshold``.
+
+    Formal STL (per convergence hotspot):
+        G_{[t_c - w, t_c + w]}( max_{i,j in G} ||pos_i - pos_j|| < threshold )
 
     Args:
-        traj_in: Shape (N, K, 2) — input trajectories.
+        pos:       JAX array, shape (K, N, 2).
+        hotspots:  List of Hotspot objects.
+        threshold: Maximum allowed pairwise distance within the group (pixels).
 
     Returns:
-        Shape (N, N) similarity matrix (higher = more similar).
+        Scalar robustness value (higher = better satisfied).
     """
-    N = traj_in.shape[0]
-    sim = np.zeros((N, N), dtype=np.float32)
-
-    # TODO (Part 1): Implement a similarity measure.
+    # TODO (Part 1 — A): Implement the bundling STL specification.
     #
-    #   Option A — Pointwise L2 distance (fast, assumes aligned time):
-    #       diff = traj_in[i] - traj_in[j]          # (K, 2)
-    #       dist = np.sqrt((diff**2).sum(axis=-1)).mean()
-    #       sim[i, j] = 1 / (1 + dist)
+    #   Suggested approach (differentiable fallback):
+    #     For each convergence hotspot:
+    #       1. Extract group indices and the convergence time step t_c.
+    #       2. Define a time window, e.g., [t_c - 5, t_c + 5].
+    #       3. For each frame in the window, compute the maximum pairwise
+    #          distance among group members.
+    #       4. Robustness = threshold - max over the window of (max pairwise dist).
+    #          This corresponds to G_{window}(max_dist < threshold).
+    #     Aggregate across hotspots with min (conjunction).
     #
-    #   Option B — DTW (more robust to time misalignment; use a library
-    #       such as dtaidistance or implement a simple O(K^2) version).
+    #   stljax approach:
+    #     Define a signal = threshold - max_pairwise_dist_per_frame  (shape (K,))
+    #     Use Always(Predicate(...) > 0, interval=[t_lo, t_hi])
     #
-    # Placeholder: all similarities set to 1.
-    sim[:] = 1.0
-    np.fill_diagonal(sim, 0.0)
-    return sim
+    # Placeholder:
+    return jnp.array(0.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Grouping / clustering
+# B) Separation (anti-occlusion) specification
 # ═══════════════════════════════════════════════════════════════════════════
 
-def cluster_trajectories(
-    traj_in: NDArray,
-    n_clusters: int = 4,
-    sim_matrix: NDArray | None = None,
-) -> list[list[int]]:
-    """Assign each trajectory to a group (cluster).
+def separation_robustness(
+    pos: Any,
+    min_dist: float = 2 * DOT_RADIUS,
+) -> Any:
+    """STL robustness for separation: all pairs maintain minimum distance at all times.
+
+    Formal STL:
+        G( min_{i < j} ||pos_i - pos_j|| >= min_dist )
 
     Args:
-        traj_in:    Shape (N, K, 2).
-        n_clusters: Number of groups to form.
-        sim_matrix: Optional precomputed (N, N) similarity matrix.
+        pos:      JAX array, shape (K, N, 2).
+        min_dist: Minimum required separation in pixels.
 
     Returns:
-        List of groups; each group is a list of trajectory indices.
+        Scalar robustness value.
     """
-    N = traj_in.shape[0]
-    groups: list[list[int]] = [[] for _ in range(n_clusters)]
-
-    # TODO (Part 1): Implement trajectory clustering.
+    # TODO (Part 1 — B): Implement the separation STL specification.
     #
-    #   Suggested approach using sklearn:
-    #       from sklearn.cluster import AgglomerativeClustering
-    #       flat = traj_in.reshape(N, -1)
-    #       labels = AgglomerativeClustering(n_clusters=n_clusters).fit_predict(flat)
+    #   Suggested approach:
+    #     1. For each frame, compute all pairwise distances: (K, N, N).
+    #     2. Extract the minimum pairwise distance per frame (excluding diagonal).
+    #     3. Signal = min_pairwise_dist - min_dist   (shape (K,))
+    #     4. Robustness of G(signal > 0) = min over all frames of signal.
     #
-    #   Or use the similarity matrix with spectral clustering:
-    #       from sklearn.cluster import SpectralClustering
-    #       labels = SpectralClustering(n_clusters, affinity='precomputed').fit_predict(sim_matrix)
+    #   stljax approach:
+    #     signal = min_pairwise_dist_per_frame - min_dist
+    #     Use Always(Predicate(...) > 0)
     #
-    # Placeholder: round-robin assignment.
-    for i in range(N):
-        groups[i % n_clusters].append(i)
-
-    return groups
+    # Placeholder:
+    return jnp.array(0.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Bundling
+# C) Smoothness specification
 # ═══════════════════════════════════════════════════════════════════════════
 
-def bundle_trajectories(
-    traj_in: NDArray,
-    hotspots: list[Hotspot] | None = None,
-    n_clusters: int = 4,
-    bundle_strength: float = 0.5,
-    smooth_sigma: float = 3.0,
-) -> tuple[NDArray, list[list[int]]]:
-    """Bundle trajectories toward group centrelines.
+def smoothness_robustness(
+    pos: Any,
+    max_accel: float = 5.0,
+) -> Any:
+    """STL robustness for smoothness: acceleration magnitude stays bounded.
+
+    Formal STL:
+        G( max_i ||accel_i(t)|| <= max_accel )
+
+    where accel_i(t) is the second-order finite difference of object i's position.
 
     Args:
-        traj_in:        Shape (N, K, 2) — input trajectories.
-        hotspots:       Known hotspot locations (used to anchor bundling).
-        n_clusters:     Number of groups.
-        bundle_strength: How strongly to attract objects to the centroid [0,1].
-        smooth_sigma:   Gaussian smoothing applied to centrelines.
+        pos:       JAX array, shape (K, N, 2).
+        max_accel: Maximum allowed acceleration magnitude (pixels/frame^2).
 
     Returns:
-        bundled: Shape (N, K, 2) — bundled trajectories.
-        groups:  List of groups (lists of indices).
+        Scalar robustness value.
     """
-    N, K, D = traj_in.shape
-    bundled = traj_in.copy()
-
-    # TODO (Part 1): Implement the bundling algorithm.
+    # TODO (Part 1 — C): Implement the smoothness STL specification.
     #
-    #   Suggested force-based approach:
-    #     1. Cluster trajectories -> groups.
-    #     2. For each group, compute the per-timestep centroid (centreline).
-    #        Optionally smooth the centreline with Gaussian smoothing.
-    #     3. Move each trajectory toward its group centreline by bundle_strength:
-    #            bundled[i] = (1 - bundle_strength) * traj_in[i]
-    #                          + bundle_strength * centreline[group[i]]
-    #     4. If hotspots are provided, keep bundled trajectories close to
-    #        the hotspot locations at the specified time steps (anchor).
+    #   Suggested approach:
+    #     1. Compute velocity: vel = diff(pos, axis=0)         -> (K-1, N, 2)
+    #     2. Compute acceleration: acc = diff(vel, axis=0)     -> (K-2, N, 2)
+    #     3. Compute acceleration magnitude per object per frame.
+    #     4. Signal = max_accel - max_over_objects(accel_mag)   (shape (K-2,))
+    #     5. Robustness of G(signal > 0) = min over frames of signal.
     #
-    # Placeholder: return input unchanged.
-    groups = cluster_trajectories(traj_in, n_clusters)
-    return bundled, groups
+    # Placeholder:
+    return jnp.array(0.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Layout / anti-occlusion ("seat allocation")
+# D) Start/end correctness specification
 # ═══════════════════════════════════════════════════════════════════════════
 
-def assign_offsets(
-    bundled: NDArray,
-    groups: list[list[int]],
-    dot_radius: float = DOT_RADIUS,
-    method: str = "static",
-) -> NDArray:
-    """Assign per-object layout offsets to reduce occlusion within groups.
+def start_end_robustness(
+    pos: Any,
+    traj_in: Any,
+    tolerance: float = 20.0,
+) -> Any:
+    """STL robustness for start/end correctness.
+
+    Each object must start and end within ``tolerance`` of its input positions.
+
+    Formal STL (per object i):
+        ||pos_i(0) - traj_in_i(0)|| <= tolerance
+        AND
+        ||pos_i(K-1) - traj_in_i(K-1)|| <= tolerance
+
+    Aggregated over all objects with min (conjunction).
 
     Args:
-        bundled:    Shape (N, K, 2) — bundled trajectories from Part 1.
-        groups:     List of groups (lists of object indices).
-        dot_radius: Visual dot radius (used to set minimum spacing).
-        method:     ``"static"`` (perpendicular lanes) or ``"repulsion"``.
+        pos:       JAX array, shape (K, N, 2).
+        traj_in:   JAX array, shape (N, K, 2) — reference trajectories.
+        tolerance: Maximum allowed displacement in pixels.
 
     Returns:
-        pos: Shape (K, N, 2) — final positions ready for rendering.
-             Note the axis order change to (K, N, 2).
+        Scalar robustness value.
     """
-    N, K, D = bundled.shape
-    pos = bundled.copy()  # (N, K, 2)
-
-    # TODO (Part 1): Implement the layout strategy.
+    # TODO (Part 1 — D): Implement start/end correctness.
     #
-    #   Option A — Static perpendicular offsets:
-    #     For each group at each time step:
-    #       1. Compute the group centroid.
-    #       2. Compute the direction of motion (tangent to the centreline).
-    #       3. Compute the perpendicular direction.
-    #       4. Space objects along the perpendicular: offsets like
-    #            [-spacing*(n_g-1)/2, ..., +spacing*(n_g-1)/2]
-    #          where spacing = 2 * dot_radius + margin.
+    #   Suggested approach:
+    #     start_err = jnp.sqrt(((pos[0] - traj_in[:, 0, :])**2).sum(-1))  # (N,)
+    #     end_err   = jnp.sqrt(((pos[-1] - traj_in[:, -1, :])**2).sum(-1))
+    #     rho = tolerance - jnp.maximum(start_err, end_err)
+    #     return rho.min()   # worst-case over all objects
     #
-    #   Option B — Repulsion forces:
-    #     Iterate for a fixed number of steps:
-    #       For each pair (i, j) in the same group:
-    #         if dist(pos[i,t], pos[j,t]) < 2 * dot_radius:
-    #             apply a repulsive force to push them apart.
-    #     Add a damping / spring-back force toward the centreline.
-    #
-    # Placeholder: no offset (returns bundled positions in time-major order).
-
-    # Convert from (N, K, 2) -> (K, N, 2).
-    pos_out = pos.transpose(1, 0, 2).copy()
-    return pos_out
+    # Placeholder:
+    return jnp.array(0.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Run Part 1 pipeline
+# Combined robustness (used by Part 2)
 # ═══════════════════════════════════════════════════════════════════════════
 
-def run(
-    data_path: str | None = None,
-    n_clusters: int = 4,
-    bundle_strength: float = 0.5,
-    record_dir: str | None = None,
-) -> None:
-    from utils import set_global_seed
-    from data import generate_dataset, load_trajectories
-    import metrics
+def total_robustness(
+    pos: Any,
+    traj_in: Any,
+    hotspots: list[Hotspot],
+) -> Any:
+    """Sum all STL robustness terms.
 
-    set_global_seed(RANDOM_SEED)
+    Args:
+        pos:      JAX array, shape (K, N, 2).
+        traj_in:  JAX array, shape (N, K, 2).
+        hotspots: List of Hotspot objects.
 
-    # --- Load / generate data ---
-    if data_path is None:
-        print("Generating synthetic dataset ...")
-        traj_in, hotspots = generate_dataset(n=N, k=K)
-    else:
-        print(f"Loading trajectories from {data_path} ...")
-        traj_in = load_trajectories(data_path, resample_to=K)
-        hotspots = []
+    Returns:
+        Scalar total robustness (higher = better).
+    """
+    rho_bundle = bundling_robustness(pos, hotspots)
+    rho_sep = separation_robustness(pos)
+    rho_smooth = smoothness_robustness(pos)
+    rho_se = start_end_robustness(pos, traj_in)
+    return rho_bundle + rho_sep + rho_smooth + rho_se
 
-    print(f"traj_in shape: {traj_in.shape}")  # (N, K, 2)
 
-    # --- Baseline (no processing) ---
-    pos_baseline = baseline(traj_in)   # (K, N, 2)
+# ═══════════════════════════════════════════════════════════════════════════
+# Evaluation across varying N
+# ═══════════════════════════════════════════════════════════════════════════
 
-    # --- Part 1 algorithm ---
-    bundled, groups = bundle_trajectories(
-        traj_in,
-        hotspots=hotspots,
-        n_clusters=n_clusters,
-        bundle_strength=bundle_strength,
-    )
-    pos_part1 = assign_offsets(bundled, groups)  # (K, N, 2)
+def evaluate_specifications(ns: list[int] | None = None) -> None:
+    """Evaluate all STL specifications on baseline trajectories for varying N.
 
-    # --- Evaluate ---
-    print("\n--- Baseline metrics ---")
-    print(f"  occlusion       : {metrics.occlusion_rate(pos_baseline):.4f}")
-    print(f"  mean deviation  : {metrics.mean_deviation(traj_in, pos_baseline):.2f} px")
-    sm = metrics.smoothness_score(pos_baseline)
-    print(f"  mean velocity   : {sm['mean_velocity']:.2f}")
-    print(f"  mean accel      : {sm['mean_acceleration']:.2f}")
+    For each N, generates a dataset, converts to baseline positions (no
+    modification), and reports the robustness of each specification.
 
-    print("\n--- Part 1 metrics ---")
-    print(f"  occlusion       : {metrics.occlusion_rate(pos_part1):.4f}")
-    print(f"  mean deviation  : {metrics.mean_deviation(traj_in, pos_part1):.2f} px")
-    sm1 = metrics.smoothness_score(pos_part1)
-    print(f"  mean velocity   : {sm1['mean_velocity']:.2f}")
-    print(f"  mean accel      : {sm1['mean_acceleration']:.2f}")
+    Args:
+        ns: List of trajectory counts to evaluate. Defaults to [5, 10, 20, 50].
+    """
+    from data import generate_dataset
 
-    # --- Render / record ---
-    if record_dir is not None:
-        from viewer import export_frames
-        export_frames(pos_part1, record_dir)
-    else:
-        from viewer import play
-        play(pos_part1, title="Part 1 — Bundled Animation")
+    if ns is None:
+        ns = [5, 10, 20, 50]
 
+    print(f"{'N':>5}  {'Bundling':>10}  {'Separation':>11}  {'Smoothness':>11}  {'Start/End':>10}")
+    print("-" * 60)
+
+    for n in ns:
+        traj_in, hotspots = generate_dataset(n=n, k=K, seed=RANDOM_SEED)
+        pos = baseline(traj_in)  # (K, N, 2)
+
+        # Convert to JAX arrays for robustness computation.
+        pos_jax = jnp.array(pos, dtype=jnp.float32)
+        traj_jax = jnp.array(traj_in, dtype=jnp.float32)
+
+        rho_b = float(bundling_robustness(pos_jax, hotspots))
+        rho_s = float(separation_robustness(pos_jax))
+        rho_m = float(smoothness_robustness(pos_jax))
+        rho_e = float(start_end_robustness(pos_jax, traj_jax))
+
+        print(f"{n:>5}  {rho_b:>10.2f}  {rho_s:>11.2f}  {rho_m:>11.2f}  {rho_e:>10.2f}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CLI entry point
+# ═══════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run Part 1 animation pipeline")
-    parser.add_argument("--data", type=str, default=None, help="Path to .npy trajectory file")
-    parser.add_argument("--clusters", type=int, default=4)
-    parser.add_argument("--strength", type=float, default=0.5)
-    parser.add_argument("--record", type=str, default=None, help="Export frames to this directory")
+    parser = argparse.ArgumentParser(
+        description="Part 1: Evaluate STL specifications on baseline trajectories"
+    )
+    parser.add_argument(
+        "--ns", type=int, nargs="+", default=[5, 10, 20, 50],
+        help="List of trajectory counts N to evaluate (default: 5 10 20 50)",
+    )
     args = parser.parse_args()
 
-    run(
-        data_path=args.data,
-        n_clusters=args.clusters,
-        bundle_strength=args.strength,
-        record_dir=args.record,
-    )
+    evaluate_specifications(ns=args.ns)

@@ -15,7 +15,7 @@ from numpy.typing import NDArray
 
 import pygame
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, DOT_RADIUS, BG_COLOR
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, DOT_RADIUS, BG_COLOR, Hotspot
 
 
 # Colour palette — one colour per object (wraps around if N > len(PALETTE)).
@@ -31,6 +31,43 @@ PALETTE = [
 # Interactive viewer
 # ---------------------------------------------------------------------------
 
+def _draw_hotspots(
+    surface: pygame.Surface,
+    hotspots: list[Hotspot],
+    frame: int,
+    font: pygame.font.Font,
+) -> None:
+    """Draw hotspot markers on the surface.
+
+    Each hotspot is shown as a translucent circle with a label.  The circle
+    is highlighted when the current frame is near the hotspot's active time.
+    """
+    for h in hotspots:
+        hx, hy = int(h.x), int(h.y)
+        is_converge = h.kind == "converge"
+        base_color = (220, 60, 60) if is_converge else (60, 60, 220)
+        radius = 20
+
+        # Highlight when the current frame is within ±5 of the hotspot time.
+        near = abs(frame - h.time_step) <= 5
+        alpha = 180 if near else 80
+
+        # Draw a translucent filled circle via a temporary surface.
+        circle_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(
+            circle_surf, (*base_color, alpha), (radius, radius), radius
+        )
+        surface.blit(circle_surf, (hx - radius, hy - radius))
+
+        # Outline.
+        pygame.draw.circle(surface, base_color, (hx, hy), radius, 2)
+
+        # Label.
+        label = "C" if is_converge else "D"
+        txt = font.render(label, True, base_color)
+        surface.blit(txt, (hx - txt.get_width() // 2, hy - txt.get_height() // 2))
+
+
 def play(
     pos: NDArray,
     title: str = "Trajectory Animation",
@@ -38,6 +75,7 @@ def play(
     height: int = WINDOW_HEIGHT,
     fps: int = FPS,
     trail_length: int = 10,
+    hotspots: list[Hotspot] | None = None,
 ) -> None:
     """Play the animation and block until the window is closed.
 
@@ -48,8 +86,10 @@ def play(
         height:       Window height in pixels.
         fps:          Playback frame rate.
         trail_length: Number of past frames to draw as a fading trail.
+        hotspots:     Optional list of Hotspot objects to display on the canvas.
     """
     K, N, _ = pos.shape
+    hotspots = hotspots or []
 
     pygame.init()
     screen = pygame.display.set_mode((width, height))
@@ -79,6 +119,10 @@ def play(
 
         # --- Draw ---
         screen.fill(BG_COLOR)
+
+        # Draw hotspot markers (behind the dots).
+        if hotspots:
+            _draw_hotspots(screen, hotspots, frame, font)
 
         # Draw trails.
         for obj in range(N):
@@ -124,6 +168,7 @@ def export_frames(
     width: int = WINDOW_WIDTH,
     height: int = WINDOW_HEIGHT,
     trail_length: int = 10,
+    hotspots: list[Hotspot] | None = None,
 ) -> None:
     """Render each frame to a PNG file without displaying a window.
 
@@ -133,17 +178,24 @@ def export_frames(
         width:        Image width in pixels.
         height:       Image height in pixels.
         trail_length: Number of trailing frames to draw.
+        hotspots:     Optional list of Hotspot objects to display on each frame.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    hotspots = hotspots or []
 
     K, N, _ = pos.shape
 
     pygame.init()
-    surface = pygame.Surface((width, height))
+    surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    font = pygame.font.SysFont(None, 24)
 
     for frame in range(K):
         surface.fill(BG_COLOR)
+
+        # Hotspot markers.
+        if hotspots:
+            _draw_hotspots(surface, hotspots, frame, font)
 
         # Trails.
         for obj in range(N):
