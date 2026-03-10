@@ -1,0 +1,8 @@
+jax
+jaxlib
+optax
+stljax
+pygame
+numpy
+matplotlib
+scipy
