@@ -58,13 +58,6 @@ def bundling_robustness(
 ) -> Any:
     """STL robustness for bundling: group members stay close during convergence.
 
-    Intent: For each convergence hotspot with group G and active time t_c,
-    during a time window around t_c the maximum pairwise distance within
-    G should remain below ``threshold``.
-
-    Formal STL (per convergence hotspot):
-        G_{[t_c - w, t_c + w]}( max_{i,j in G} ||pos_i - pos_j|| < threshold )
-
     Args:
         pos:       JAX array, shape (K, N, 2).
         hotspots:  List of Hotspot objects.
@@ -103,9 +96,6 @@ def separation_robustness(
 ) -> Any:
     """STL robustness for separation: all pairs maintain minimum distance at all times.
 
-    Formal STL:
-        G( min_{i < j} ||pos_i - pos_j|| >= min_dist )
-
     Args:
         pos:      JAX array, shape (K, N, 2).
         min_dist: Minimum required separation in pixels.
@@ -137,12 +127,7 @@ def smoothness_robustness(
     pos: Any,
     max_accel: float = 5.0,
 ) -> Any:
-    """STL robustness for smoothness: acceleration magnitude stays bounded.
-
-    Formal STL:
-        G( max_i ||accel_i(t)|| <= max_accel )
-
-    where accel_i(t) is the second-order finite difference of object i's position.
+    """STL robustness for smoothness: acceleration magnitude stays bounded.    
 
     Args:
         pos:       JAX array, shape (K, N, 2).
@@ -174,15 +159,7 @@ def start_end_robustness(
     tolerance: float = 20.0,
 ) -> Any:
     """STL robustness for start/end correctness.
-
-    Each object must start and end within ``tolerance`` of its input positions.
-
-    Formal STL (per object i):
-        ||pos_i(0) - traj_in_i(0)|| <= tolerance
-        AND
-        ||pos_i(K-1) - traj_in_i(K-1)|| <= tolerance
-
-    Aggregated over all objects with min (conjunction).
+        Objects must start and end within a certain distance of their input traj.
 
     Args:
         pos:       JAX array, shape (K, N, 2).

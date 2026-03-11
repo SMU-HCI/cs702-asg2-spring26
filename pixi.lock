@@ -133,13 +133,16 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zlib-ng-2.3.3-hed4e4f5_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
+      - pypi: https://files.pythonhosted.org/packages/3a/2a/7cc015f5b9f5db42b7d48157e23356022889fc354a2813c15934b7cb5c0e/attrs-25.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4a/d2/a6c0296814556c68ee32009d9c2ad4f85f2707cdecfd7727951ec228005d/cffi-2.0.0-cp313-cp313-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/91/4c/e0ce1ef95d4000ebc1c11801f9b944fa5910ecc15b5e351865763d8657f8/graphviz-0.21-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/24/d9/ca1be234911c76ccd87a9e0d8210394153cb6ad9b5da65a231aff8769d6f/mediapipe-0.10.32-py3-none-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/7e/4c/a45c96b9fe90b2c48ee604f5176eb7deb46ce7c2e87c8d819d2945dbcab6/opencv_contrib_python-4.13.0.92-cp37-abi3-macosx_13_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/fc/6f/5a28fef4c4a382be06afe3938c64cc168223016fa520c5abaf37e8862aa5/opencv_python-4.13.0.92-cp37-abi3-macosx_13_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/47/10/2cbe4c6f0fb83d2de37249567373d64327a5e4d8db72f486db42875b08f6/pyarrow-23.0.1-cp313-cp313-macosx_12_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/79/37/0bd89c08fec35b3b23f0ca38eff0fd9960c67734643730b45210b407e35d/rerun_sdk-0.30.2-cp310-abi3-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/56/f9/c037c35f6d0b6bc3bc7bfb314f1d6f1f9a341328ef47cd63fc4f850a7b27/sounddevice-0.5.5-py3-none-macosx_10_6_x86_64.macosx_10_6_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/4d/11/324dadf8c57a7a7db86cef2630076964865da4657476ed1445f78d658112/stljax-1.1.3-py3-none-any.whl
 packages:
@@ -176,6 +179,11 @@ packages:
   purls: []
   size: 2235747
   timestamp: 1718551382432
+- pypi: https://files.pythonhosted.org/packages/3a/2a/7cc015f5b9f5db42b7d48157e23356022889fc354a2813c15934b7cb5c0e/attrs-25.4.0-py3-none-any.whl
+  name: attrs
+  version: 25.4.0
+  sha256: adcf7e2a1fb3b36ac48d97835bb6d8ade15b8dcce26aba8bf1d14847b57a3373
+  requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/brotli-1.2.0-h7d5ae5b_1.conda
   sha256: 422ac5c91f8ef07017c594d9135b7ae068157393d2a119b1908c7e350938579d
   md5: 48ece20aa479be6ac9a284772827d00c
@@ -1424,6 +1432,11 @@ packages:
   purls: []
   size: 8381
   timestamp: 1726802424786
+- pypi: https://files.pythonhosted.org/packages/47/10/2cbe4c6f0fb83d2de37249567373d64327a5e4d8db72f486db42875b08f6/pyarrow-23.0.1-cp313-cp313-macosx_12_0_arm64.whl
+  name: pyarrow
+  version: 23.0.1
+  sha256: 6b8fda694640b00e8af3c824f99f789e836720aa8c9379fb435d4c4953a756b8
+  requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl
   name: pycparser
   version: '3.0'
@@ -1557,6 +1570,35 @@ packages:
   purls: []
   size: 313930
   timestamp: 1765813902568
+- pypi: https://files.pythonhosted.org/packages/79/37/0bd89c08fec35b3b23f0ca38eff0fd9960c67734643730b45210b407e35d/rerun_sdk-0.30.2-cp310-abi3-macosx_11_0_arm64.whl
+  name: rerun-sdk
+  version: 0.30.2
+  sha256: 8d952bf7ae2a1b1ee6064435cc14c82858771c2c2f1ec48b8164d69f6e4f0708
+  requires_dist:
+  - attrs>=23.1.0
+  - numpy>=2
+  - pillow>=8.0.0
+  - pyarrow>=18.0.0
+  - typing-extensions>=4.5
+  - inline-snapshot==0.31.1 ; extra == 'tests'
+  - opencv-python>4.6 ; extra == 'tests'
+  - pandas>=2 ; extra == 'tests'
+  - polars==1.36.1 ; extra == 'tests'
+  - pytest==8.4.2 ; extra == 'tests'
+  - semver>=3.0,<3.1 ; extra == 'tests'
+  - syrupy==5.0.0 ; extra == 'tests'
+  - tomli==2.0.1 ; extra == 'tests'
+  - torch>=2.5 ; extra == 'tests'
+  - datafusion==50.1.0 ; extra == 'tests'
+  - rerun-notebook==0.30.2 ; extra == 'notebook'
+  - datafusion==50.1.0 ; extra == 'datafusion'
+  - pandas>=2 ; extra == 'datafusion'
+  - datafusion==50.1.0 ; extra == 'dataplatform'
+  - pandas>=2 ; extra == 'dataplatform'
+  - datafusion==50.1.0 ; extra == 'all'
+  - pandas>=2 ; extra == 'all'
+  - rerun-notebook==0.30.2 ; extra == 'all'
+  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/scipy-1.17.1-py313hc753a45_0.conda
   sha256: d22bf4791d1fc96b35374de0dd904745c3b54282ba23c3d435a994b4ff384719
   md5: 6f3a898962bdea87c076108bc336df2e

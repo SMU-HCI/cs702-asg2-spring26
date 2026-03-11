@@ -6,3 +6,4 @@ pygame
 numpy
 matplotlib
 scipy
+rerun-sdk
